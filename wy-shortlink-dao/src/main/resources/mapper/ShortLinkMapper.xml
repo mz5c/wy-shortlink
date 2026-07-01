@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wy.shortlink.dao.mapper.ShortLinkMapper">
+    <select id="selectByShortCode" resultType="com.wy.shortlink.dao.entity.ShortLinkDO">
+        SELECT * FROM t_short_link WHERE short_code = #{shortCode} AND deleted = 0
+    </select>
+</mapper>

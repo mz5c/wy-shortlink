@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wy.shortlink.dao.mapper.AccessLogMapper">
+
+    <update id="createTableIfNotExists">
+        CREATE TABLE IF NOT EXISTS ${tableName} (
+            id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+            short_code VARCHAR(20) NOT NULL COMMENT '短码',
+            access_time DATETIME NOT NULL COMMENT '访问时间',
+            ip VARCHAR(45) DEFAULT NULL COMMENT '访问者IP',
+            user_agent VARCHAR(512) DEFAULT NULL COMMENT 'User-Agent',
+            referer VARCHAR(2048) DEFAULT NULL COMMENT '来源URL',
+            PRIMARY KEY (id),
+            KEY idx_short_access (short_code, access_time),
+            KEY idx_access_time (access_time)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='访问日志表'
+    </update>
+
+    <insert id="insertLog">
+        INSERT INTO ${tableName} (short_code, access_time, ip, user_agent, referer)
+        VALUES (#{log.shortCode}, #{log.accessTime}, #{log.ip}, #{log.userAgent}, #{log.referer})
+    </insert>
+</mapper>

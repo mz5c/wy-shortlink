@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wy.shortlink.dao.mapper.AccessStatsMapper">
+
+    <insert id="upsertStats">
+        INSERT INTO t_access_stats (short_code, stat_date, pv, uv)
+        VALUES (#{stat.shortCode}, #{stat.statDate}, #{stat.pv}, #{stat.uv})
+        ON DUPLICATE KEY UPDATE pv = pv + VALUES(pv), uv = uv + VALUES(uv)
+    </insert>
+
+    <select id="selectByShortCodeAndDateRange" resultType="com.wy.shortlink.dao.entity.AccessStatsDO">
+        SELECT * FROM t_access_stats
+        WHERE short_code = #{shortCode}
+          AND stat_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY stat_date ASC
+    </select>
+</mapper>
