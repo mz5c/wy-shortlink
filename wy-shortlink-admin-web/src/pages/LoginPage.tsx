@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
@@ -9,25 +9,34 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const loginStore = useAuthStore((s) => s.login);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
-  if (isLoggedIn) { navigate('/links', { replace: true }); return null; }
+  // 用 useEffect 处理已登录跳转，避免 render 中调用 navigate
+  useEffect(() => {
+    const hasToken = !!localStorage.getItem('accessToken');
+    if (isLoggedIn || hasToken) {
+      const from = (location.state as any)?.from?.pathname || '/links';
+      navigate(from, { replace: true });
+    }
+  }, [isLoggedIn, navigate, location.state]);
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
       const res = await authApi.login(values);
       const { accessToken, refreshToken, userInfo } = res.data;
+      // 先存 localStorage，再更新 Zustand
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      loginStore(userInfo);
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      // 使用 getState() 确保状态同步更新，useEffect 会处理跳转
+      useAuthStore.getState().login(userInfo);
       message.success('登录成功');
-      const from = (location.state as any)?.from?.pathname || '/links';
-      navigate(from, { replace: true });
     } catch (err: any) {
       message.error(err?.response?.data?.message || '登录失败');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
