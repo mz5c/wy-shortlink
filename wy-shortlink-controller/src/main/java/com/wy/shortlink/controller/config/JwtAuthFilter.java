@@ -13,6 +13,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -43,6 +45,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String tokenId = claims.getId();
             String blacklistKey = String.format(Constants.REDIS_BLACKLIST_ACCESS, tokenId);
             if (Boolean.TRUE.equals(redisTemplate.hasKey(blacklistKey))) {
+                log.warn("[JWT] Token 已黑名单: tokenId={}", tokenId);
                 writeError(response, ErrorCode.TOKEN_BLACKLISTED, "此账号已在其他设备登录");
                 return;
             }
@@ -53,9 +56,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
             SecurityContextHolder.getContext().setAuthentication(authToken);
         } catch (ExpiredJwtException e) {
+            log.warn("[JWT] Token 已过期: uri={}", request.getRequestURI());
             writeError(response, ErrorCode.UNAUTHORIZED, "Token 已过期");
             return;
         } catch (JwtException e) {
+            String preview = token.length() > 30 ? token.substring(0, 30) + "..." : token;
+            log.warn("[JWT] Token 无效: uri={}, token={}, error={}", request.getRequestURI(), preview, e.getMessage());
             writeError(response, ErrorCode.UNAUTHORIZED, "Token 无效");
             return;
         }
