@@ -1,5 +1,6 @@
 CREATE DATABASE IF NOT EXISTS wy_shortlink DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE wy_shortlink;
+SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS t_short_link (
     id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
