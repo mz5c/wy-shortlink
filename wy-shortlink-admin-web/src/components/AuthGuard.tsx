@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const userInfo = useAuthStore((s) => s.userInfo);
   const location = useLocation();
 
   // 同时检查 Zustand 状态和 localStorage，任一有 token 即认为已登录
