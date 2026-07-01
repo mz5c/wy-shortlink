@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button, theme } from 'antd';
 import { LinkOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
@@ -11,7 +11,8 @@ const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { userInfo, logout } = useAuthStore();
+  const userInfo = useAuthStore((s) => s.userInfo);
+  const logout = useAuthStore((s) => s.logout);
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
   const menuItems = [{ key: '/links', icon: <LinkOutlined />, label: '短链管理' }];

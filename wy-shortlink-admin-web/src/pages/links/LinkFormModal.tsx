@@ -21,13 +21,16 @@ const LinkFormModal: React.FC<LinkFormModalProps> = ({ open, editingLink, onOk, 
     }
   }, [open, isEdit, editingLink, form]);
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
-      const params: any = { url: values.url };
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      const params: { url: string; alias?: string; expireTime?: string } = { url: values.url };
       if (values.alias) params.alias = values.alias;
       if (values.expireTime) params.expireTime = values.expireTime.format('YYYY-MM-DDTHH:mm:ss');
       onOk(params);
-    });
+    } catch {
+      // validation failed, antd shows inline error messages
+    }
   };
 
   return (

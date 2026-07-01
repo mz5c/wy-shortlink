@@ -33,6 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         set({ isLoggedIn: true, userInfo: JSON.parse(ui) });
       } catch {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userInfo');
         set({ isLoggedIn: false, userInfo: null });
       }
     }

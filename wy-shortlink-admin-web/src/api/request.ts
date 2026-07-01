@@ -23,7 +23,11 @@ request.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const originalRequest = config!;
+    if (!config) {
+      doLogout();
+      return Promise.reject(error);
+    }
+    const originalRequest = config;
     const alreadyRetried = (originalRequest as any)._retry;
 
     if (alreadyRetried) {
@@ -41,6 +45,7 @@ request.interceptors.response.use(
     if (isRefreshing) {
       return new Promise((resolve) => {
         pendingRequests.push((token: string) => {
+          originalRequest.headers = originalRequest.headers || {};
           originalRequest.headers.Authorization = `Bearer ${token}`;
           resolve(request(originalRequest));
         });
@@ -59,6 +64,7 @@ request.interceptors.response.use(
       pendingRequests.forEach((cb) => cb(accessToken));
       pendingRequests = [];
 
+      originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${accessToken}`;
       return request(originalRequest);
     } catch {

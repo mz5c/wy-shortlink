@@ -8,21 +8,20 @@ import { useAuthStore } from '../store/useAuthStore';
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation() as { state?: { from?: { pathname?: string } } };
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
       const res = await authApi.login(values);
       const { accessToken, refreshToken, userInfo } = res.data;
-      // 先存 localStorage，再更新 Zustand，最后跳转
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('userInfo', JSON.stringify(userInfo));
       useAuthStore.getState().login(userInfo);
 
       message.success('登录成功');
-      const from = (location.state as any)?.from?.pathname || '/links';
+      const from = location.state?.from?.pathname || '/links';
       navigate(from, { replace: true });
     } catch (err: any) {
       message.error(err?.response?.data?.message || '登录失败');
