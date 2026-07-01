@@ -1,8 +1,8 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const request = axios.create({ baseURL: '/api/v1', timeout: 10000 });
 
-request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+request.interceptors.request.use((config) => {
   const accessToken = localStorage.getItem('accessToken');
   if (accessToken && config.headers) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -16,7 +16,7 @@ let pendingRequests: Array<(token: string) => void> = [];
 request.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = (error.config ?? {}) as any & { _retry?: boolean };
     if (error.response?.status === 401 && !originalRequest._retry) {
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
