@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Input, Space, Tag, Popconfirm, message, Tooltip } from 'antd';
 import { PlusOutlined, SearchOutlined, BarChartOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -16,28 +16,20 @@ const LinkListPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<ShortLinkVO | undefined>();
   const navigate = useNavigate();
-  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
-    // 取消上一次未完成的请求（防止 Strict Mode 双重调用）
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     setLoading(true);
     try {
       const res = await shortLinkApi.list({ page, size, keyword });
-      if (controller.signal.aborted) return;
-      // 后端统一返回 { code, message, data: { total, page, size, list } }
       const body = res.data as any;
       if (body.code === 0 && body.data) {
         setData(body.data.list ?? []);
         setTotal(body.data.total ?? 0);
       }
     } catch {
-      if (!controller.signal.aborted) message.error('获取数据失败');
+      message.error('获取数据失败');
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      setLoading(false);
     }
   }, [page, size, keyword]);
 

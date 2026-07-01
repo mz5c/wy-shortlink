@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Tag, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -12,26 +12,20 @@ const UserListPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     setLoading(true);
     try {
       const res = await userApi.list({ page, size });
-      if (controller.signal.aborted) return;
       const body = res.data as any;
       if (body.code === 0 && body.data) {
         setData(body.data.list ?? []);
         setTotal(body.data.total ?? 0);
       }
     } catch {
-      if (!controller.signal.aborted) message.error('获取用户列表失败');
+      message.error('获取用户列表失败');
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      setLoading(false);
     }
   }, [page, size]);
 
