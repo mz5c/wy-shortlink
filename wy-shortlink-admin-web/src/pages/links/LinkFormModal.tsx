@@ -34,7 +34,7 @@ const LinkFormModal: React.FC<LinkFormModalProps> = ({ open, editingLink, onOk, 
   };
 
   return (
-    <Modal title={isEdit ? '编辑短链' : '创建短链'} open={open} onOk={handleOk} onCancel={onCancel} destroyOnClose>
+    <Modal title={isEdit ? '编辑短链' : '创建短链'} open={open} onOk={handleOk} onCancel={onCancel} destroyOnHidden>
       <Form form={form} layout="vertical">
         <Form.Item name="url" label="原始 URL" rules={[{ required: true, message: '请输入 URL' }, { type: 'url', message: '请输入有效的 URL' }]}>
           <Input placeholder="https://example.com/long-url" />

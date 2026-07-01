@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Tag, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -12,14 +12,27 @@ const UserListPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     try {
       const res = await userApi.list({ page, size });
-      setData(res.data.list); setTotal(res.data.total);
-    } catch { message.error('获取用户列表失败'); }
-    finally { setLoading(false); }
+      if (controller.signal.aborted) return;
+      const body = res.data as any;
+      if (body.code === 0 && body.data) {
+        setData(body.data.list ?? []);
+        setTotal(body.data.total ?? 0);
+      }
+    } catch {
+      if (!controller.signal.aborted) message.error('获取用户列表失败');
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
   }, [page, size]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -31,7 +44,8 @@ const UserListPage: React.FC = () => {
       const values = await form.validateFields();
       await userApi.create(values);
       message.success('用户创建成功');
-      setModalOpen(false); fetchData();
+      setModalOpen(false);
+      fetchData();
     } catch (err: any) {
       if (err?.response) message.error(err.response.data?.message || '创建失败');
     }
@@ -52,7 +66,7 @@ const UserListPage: React.FC = () => {
       </div>
       <Table columns={columns} dataSource={data} rowKey="username" loading={loading}
         pagination={{ current: page, pageSize: size, total, onChange: (p) => setPage(p), showTotal: (t) => `共 ${t} 条` }} />
-      <Modal title="创建用户" open={modalOpen} onOk={handleOk} onCancel={() => setModalOpen(false)} destroyOnClose>
+      <Modal title="创建用户" open={modalOpen} onOk={handleOk} onCancel={() => setModalOpen(false)} destroyOnHidden>
         <Form form={form} layout="vertical">
           <Form.Item name="username" label="用户名" rules={[{ required: true, min: 3, message: '用户名至少3个字符' }]}>
             <Input placeholder="请输入用户名" />

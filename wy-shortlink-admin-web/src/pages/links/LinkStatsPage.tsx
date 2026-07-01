@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Row, Col, Statistic, DatePicker, Breadcrumb, Spin, message, Typography } from 'antd';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -22,12 +22,17 @@ const LinkStatsPage: React.FC = () => {
     Promise.all([
       shortLinkApi.get(code),
       shortLinkApi.getStats(code, dateRange[0].format('YYYY-MM-DD'), dateRange[1].format('YYYY-MM-DD')),
-    ]).then(([linkRes, statsRes]) => { setLink(linkRes.data); setStats(statsRes.data); })
-      .catch(() => message.error('获取统计数据失败'))
+    ]).then(([linkRes, statsRes]) => {
+      // 后端统一返回 { code, message, data: {...} }
+      const linkBody = linkRes.data as any;
+      const statsBody = statsRes.data as any;
+      if (linkBody.code === 0 && linkBody.data) setLink(linkBody.data);
+      if (statsBody.code === 0 && statsBody.data) setStats(statsBody.data);
+    }).catch(() => message.error('获取统计数据失败'))
       .finally(() => setLoading(false));
   }, [code, dateRange]);
 
-  const chartData = stats?.dailyStats.map((d) => ({ date: d.date, PV: d.pv, UV: d.uv })) || [];
+  const chartData = stats?.dailyStats?.map((d) => ({ date: d.date, PV: d.pv, UV: d.uv })) || [];
 
   return (
     <div>
