@@ -184,7 +184,7 @@ public class ShortLinkServiceImpl implements ShortLinkService {
                 .originalUrl(entity.getOriginalUrl())
                 .expireTime(entity.getExpireTime() != null ? entity.getExpireTime().format(DT_FORMAT) : null)
                 .createTime(entity.getCreateTime().format(DT_FORMAT))
-                .deleted(entity.getDeleted() == 1 || isExpired)
+                .deleted((entity.getDeleted() != null && entity.getDeleted() == 1) || isExpired)
                 .pv(0L).uv(0L)
                 .build();
     }
