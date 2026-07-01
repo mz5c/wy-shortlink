@@ -6,7 +6,6 @@ import com.wy.shortlink.service.ShortLinkService;
 import com.wy.shortlink.service.StatsService;
 import com.wy.shortlink.service.dto.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,12 +16,9 @@ public class ShortLinkController {
     private final ShortLinkService shortLinkService;
     private final StatsService statsService;
 
-    @Value("${shortlink.domain}")
-    private String domain;
-
     @PostMapping
     public Result<ShortLinkVO> create(@RequestBody CreateLinkRequest req) {
-        return Result.success(shortLinkService.createLink(req, domain));
+        return Result.success(shortLinkService.createLink(req));
     }
 
     @GetMapping

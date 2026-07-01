@@ -12,8 +12,8 @@ import com.wy.shortlink.dao.entity.ShortLinkDO;
 import com.wy.shortlink.dao.mapper.ShortLinkMapper;
 import com.wy.shortlink.service.ShortLinkService;
 import com.wy.shortlink.service.dto.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -29,18 +29,26 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ShortLinkServiceImpl implements ShortLinkService {
 
     private final ShortLinkMapper shortLinkMapper;
     private final StringRedisTemplate redisTemplate;
+    private final String domain;
+
+    public ShortLinkServiceImpl(ShortLinkMapper shortLinkMapper,
+                                StringRedisTemplate redisTemplate,
+                                @Value("${shortlink.domain}") String domain) {
+        this.shortLinkMapper = shortLinkMapper;
+        this.redisTemplate = redisTemplate;
+        this.domain = domain;
+    }
 
     private static final Pattern ALIAS_PATTERN = Pattern.compile("^[a-zA-Z0-9]{6,20}$");
     private static final DateTimeFormatter DT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     @Override
     @Transactional
-    public ShortLinkVO createLink(CreateLinkRequest req, String domain) {
+    public ShortLinkVO createLink(CreateLinkRequest req) {
         String url = UrlValidator.ensureProtocol(req.getUrl());
         if (!UrlValidator.isValid(url)) {
             throw new BizException(ErrorCode.URL_INVALID, "请提供有效的URL");
@@ -48,7 +56,7 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         if (url.length() > 2048) {
             throw new BizException(ErrorCode.PARAM_ERROR, "URL 长度超过限制(2048字符)");
         }
-        if (domain != null && url.contains(domain)) {
+        if (url.contains(domain)) {
             throw new BizException(ErrorCode.PARAM_ERROR, "短链不能指向自身域名");
         }
 
@@ -104,14 +112,7 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         String cacheKey = String.format(Constants.REDIS_LINK_KEY, shortCode);
         redisTemplate.opsForValue().set(cacheKey, url, 24 + (long) (Math.random() * 4), TimeUnit.HOURS);
 
-        return ShortLinkVO.builder()
-                .shortCode(shortCode)
-                .shortUrl(domain + "/s/" + shortCode)
-                .originalUrl(url)
-                .expireTime(expireTime != null ? expireTime.format(DT_FORMAT) : null)
-                .createTime(LocalDateTime.now().format(DT_FORMAT))
-                .pv(0L).uv(0L).deleted(false)
-                .build();
+        return toVO(entity);
     }
 
     @Override
@@ -179,6 +180,7 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         boolean isExpired = entity.getExpireTime() != null && entity.getExpireTime().isBefore(LocalDateTime.now());
         return ShortLinkVO.builder()
                 .shortCode(entity.getShortCode())
+                .shortUrl(domain + "/s/" + entity.getShortCode())
                 .originalUrl(entity.getOriginalUrl())
                 .expireTime(entity.getExpireTime() != null ? entity.getExpireTime().format(DT_FORMAT) : null)
                 .createTime(entity.getCreateTime().format(DT_FORMAT))

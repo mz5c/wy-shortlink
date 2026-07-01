@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Input, Space, Tag, Popconfirm, message, Tooltip } from 'antd';
-import { PlusOutlined, SearchOutlined, BarChartOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, BarChartOutlined, EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { shortLinkApi, ShortLinkVO } from '../../api/shortLinkApi';
@@ -74,6 +74,14 @@ const LinkListPage: React.FC = () => {
 
   const columns: ColumnsType<ShortLinkVO> = [
     { title: '短码', dataIndex: 'shortCode', key: 'shortCode', width: 100 },
+    { title: '短链', dataIndex: 'shortUrl', key: 'shortUrl', width: 240, ellipsis: true,
+      render: (url: string) => (
+        <Space size={4}>
+          <span style={{ color: '#1677ff' }}>{url}</span>
+          <Button type="text" size="small" icon={<CopyOutlined />}
+            onClick={() => { navigator.clipboard.writeText(url); message.success('已复制'); }} />
+        </Space>
+      ) },
     { title: '原始 URL', dataIndex: 'originalUrl', key: 'originalUrl', ellipsis: true,
       render: (url: string) => <Tooltip title={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></Tooltip> },
     { title: '访问量(PV)', dataIndex: 'pv', key: 'pv', width: 120 },
