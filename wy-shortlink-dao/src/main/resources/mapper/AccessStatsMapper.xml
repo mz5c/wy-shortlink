@@ -5,7 +5,7 @@
     <insert id="upsertStats">
         INSERT INTO t_access_stats (short_code, stat_date, pv, uv)
         VALUES (#{stat.shortCode}, #{stat.statDate}, #{stat.pv}, #{stat.uv})
-        ON DUPLICATE KEY UPDATE pv = pv + VALUES(pv), uv = uv + VALUES(uv)
+        ON DUPLICATE KEY UPDATE pv = VALUES(pv), uv = VALUES(uv)
     </insert>
 
     <select id="selectByShortCodeAndDateRange" resultType="com.wy.shortlink.dao.entity.AccessStatsDO">
