@@ -8,7 +8,9 @@ import com.wy.shortlink.common.exception.BizException;
 import com.wy.shortlink.common.result.PageResult;
 import com.wy.shortlink.common.util.Base62Utils;
 import com.wy.shortlink.common.util.UrlValidator;
+import com.wy.shortlink.dao.entity.AccessStatsDO;
 import com.wy.shortlink.dao.entity.ShortLinkDO;
+import com.wy.shortlink.dao.mapper.AccessStatsMapper;
 import com.wy.shortlink.dao.mapper.ShortLinkMapper;
 import com.wy.shortlink.service.ShortLinkService;
 import com.wy.shortlink.service.dto.*;
@@ -20,9 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -32,13 +35,16 @@ import java.util.stream.Collectors;
 public class ShortLinkServiceImpl implements ShortLinkService {
 
     private final ShortLinkMapper shortLinkMapper;
+    private final AccessStatsMapper statsMapper;
     private final StringRedisTemplate redisTemplate;
     private final String domain;
 
     public ShortLinkServiceImpl(ShortLinkMapper shortLinkMapper,
+                                AccessStatsMapper statsMapper,
                                 StringRedisTemplate redisTemplate,
                                 @Value("${shortlink.domain}") String domain) {
         this.shortLinkMapper = shortLinkMapper;
+        this.statsMapper = statsMapper;
         this.redisTemplate = redisTemplate;
         this.domain = domain;
     }
@@ -132,6 +138,8 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         Page<ShortLinkDO> result = shortLinkMapper.selectPage(mpPage, wrapper);
 
         List<ShortLinkVO> vos = result.getRecords().stream().map(this::toVO).collect(Collectors.toList());
+        // 批量填充 PV/UV
+        populateStats(vos);
         return PageResult.of(result.getTotal(), page, size, vos);
     }
 
@@ -176,6 +184,29 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         redisTemplate.delete(String.format(Constants.REDIS_LINK_KEY, shortCode));
     }
 
+    /**
+     * 批量填充列表中每条短链的 PV/UV（从 t_access_stats 聚合查询）。
+     */
+    private void populateStats(List<ShortLinkVO> vos) {
+        if (vos.isEmpty()) return;
+        // 收集所有 shortCode
+        Set<String> codes = vos.stream().map(ShortLinkVO::getShortCode).collect(Collectors.toSet());
+        // 查询所有时间的累计 PV/UV（不再限定日期范围，取全量聚合）
+        Map<String, long[]> statsMap = new HashMap<>();
+        for (String code : codes) {
+            List<AccessStatsDO> stats = statsMapper.selectByShortCodeAndDateRange(code, "2000-01-01", "2099-12-31");
+            long totalPv = stats.stream().mapToLong(s -> s.getPv() != null ? s.getPv() : 0).sum();
+            long totalUv = stats.stream().mapToLong(s -> s.getUv() != null ? s.getUv() : 0).sum();
+            statsMap.put(code, new long[]{totalPv, totalUv});
+        }
+        // 填充到 VO
+        for (ShortLinkVO vo : vos) {
+            long[] s = statsMap.getOrDefault(vo.getShortCode(), new long[]{0, 0});
+            vo.setPv(s[0]);
+            vo.setUv(s[1]);
+        }
+    }
+
     private ShortLinkVO toVO(ShortLinkDO entity) {
         boolean isExpired = entity.getExpireTime() != null && entity.getExpireTime().isBefore(LocalDateTime.now());
         return ShortLinkVO.builder()
@@ -185,7 +216,6 @@ public class ShortLinkServiceImpl implements ShortLinkService {
                 .expireTime(entity.getExpireTime() != null ? entity.getExpireTime().format(DT_FORMAT) : null)
                 .createTime(entity.getCreateTime().format(DT_FORMAT))
                 .deleted((entity.getDeleted() != null && entity.getDeleted() == 1) || isExpired)
-                .pv(0L).uv(0L)
                 .build();
     }
 }
