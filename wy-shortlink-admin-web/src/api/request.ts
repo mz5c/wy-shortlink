@@ -2,7 +2,6 @@ import axios, { AxiosError } from 'axios';
 
 const request = axios.create({ baseURL: '/api/v1', timeout: 10000 });
 
-// --- request interceptor ---
 request.interceptors.request.use((config) => {
   const accessToken = localStorage.getItem('accessToken');
   if (accessToken && config.headers) {
@@ -11,7 +10,6 @@ request.interceptors.request.use((config) => {
   return config;
 });
 
-// --- response interceptor (401 auto-refresh) ---
 let isRefreshing = false;
 let pendingRequests: Array<(token: string) => void> = [];
 
@@ -25,21 +23,18 @@ request.interceptors.response.use(
     }
 
     if (!config) {
-      console.warn('[Request] 401 但无 request config，登出');
       doLogout();
       return Promise.reject(error);
     }
 
     const originalRequest = config;
     if ((originalRequest as any)._retry) {
-      console.warn('[Request] 刷新后仍然 401，登出');
       doLogout();
       return Promise.reject(error);
     }
 
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
-      console.warn('[Request] 401 但无 refreshToken，登出');
       doLogout();
       return Promise.reject(error);
     }
@@ -58,12 +53,10 @@ request.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      console.log('[Request] 401，尝试刷新 token');
       const res = await axios.post('/api/v1/auth/refresh', { refreshToken });
 
       const body = res.data;
       if (body.code !== 0 || !body.data?.accessToken) {
-        console.warn('[Request] 刷新失败:', body.message);
         doLogout();
         return Promise.reject(error);
       }
@@ -77,10 +70,8 @@ request.interceptors.response.use(
 
       originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-      console.log('[Request] token 刷新成功');
       return request(originalRequest);
-    } catch (refreshErr) {
-      console.error('[Request] 刷新请求异常:', refreshErr);
+    } catch {
       pendingRequests = [];
       doLogout();
       return Promise.reject(error);

@@ -6,6 +6,7 @@ import com.wy.shortlink.service.ShortLinkService;
 import com.wy.shortlink.service.StatsService;
 import com.wy.shortlink.service.dto.*;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +18,7 @@ public class ShortLinkController {
     private final StatsService statsService;
 
     @PostMapping
-    public Result<ShortLinkVO> create(@RequestBody CreateLinkRequest req) {
+    public Result<ShortLinkVO> create(@Valid @RequestBody CreateLinkRequest req) {
         return Result.success(shortLinkService.createLink(req));
     }
 

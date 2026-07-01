@@ -14,7 +14,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AccessLogTableManager {
     private final AccessLogMapper accessLogMapper;
     private final ConcurrentHashMap<String, Boolean> createdTables = new ConcurrentHashMap<>();
+    /** 只允许 t_access_log_yyyyMM 格式，防止注入 */
+    private static final java.util.regex.Pattern TABLE_NAME_PATTERN =
+            java.util.regex.Pattern.compile("^t_access_log_\\d{6}$");
     private static final DateTimeFormatter TABLE_SUFFIX = DateTimeFormatter.ofPattern("yyyyMM");
+
+    private void validateTableName(String tableName) {
+        if (!TABLE_NAME_PATTERN.matcher(tableName).matches()) {
+            throw new IllegalArgumentException("Invalid table name: " + tableName);
+        }
+    }
 
     public String getCurrentTableName() {
         return "t_access_log_" + LocalDate.now().format(TABLE_SUFFIX);
@@ -27,6 +36,7 @@ public class AccessLogTableManager {
     public void ensureTableExists() {
         String tableName = getCurrentTableName();
         createdTables.computeIfAbsent(tableName, key -> {
+            validateTableName(key);
             accessLogMapper.createTableIfNotExists(key);
             log.info("Created access log table: {}", key);
             return true;

@@ -3,6 +3,7 @@ package com.wy.shortlink.controller;
 import com.wy.shortlink.common.result.Result;
 import com.wy.shortlink.service.AuthService;
 import com.wy.shortlink.service.dto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -15,14 +16,14 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public Result<LoginResponse> login(@RequestBody LoginRequest req) {
-        log.info("[Auth] 登录请求: username={}", req.getUsername());
+    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
+        log.debug("[Auth] 登录请求: username={}", req.getUsername());
         try {
             Result<LoginResponse> result = Result.success(authService.login(req));
-            log.info("[Auth] 登录成功: username={}", req.getUsername());
+            log.info("[Auth] 登录成功");
             return result;
         } catch (Exception e) {
-            log.warn("[Auth] 登录失败: username={}, error={}", req.getUsername(), e.getMessage());
+            log.warn("[Auth] 登录失败: error={}", e.getMessage());
             throw e;
         }
     }

@@ -28,12 +28,10 @@ const LoginPage: React.FC = () => {
       localStorage.setItem('userInfo', JSON.stringify(userInfo));
       useAuthStore.getState().login(userInfo);
 
-      console.log('[LoginPage] 登录成功, username=', userInfo.username, 'role=', userInfo.role);
       message.success('登录成功');
       const from = location.state?.from?.pathname || '/links';
       navigate(from, { replace: true });
     } catch (err: any) {
-      console.error('[LoginPage] 登录请求异常:', err);
       message.error(err?.response?.data?.message || '登录失败，请检查网络');
     } finally {
       setLoading(false);

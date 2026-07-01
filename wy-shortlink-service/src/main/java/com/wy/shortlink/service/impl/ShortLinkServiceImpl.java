@@ -165,7 +165,11 @@ public class ShortLinkServiceImpl implements ShortLinkService {
             entity.setOriginalUrl(url);
         }
         if (StringUtils.hasText(req.getExpireTime())) {
-            entity.setExpireTime(LocalDateTime.parse(req.getExpireTime(), DT_FORMAT));
+            try {
+                entity.setExpireTime(LocalDateTime.parse(req.getExpireTime(), DT_FORMAT));
+            } catch (Exception e) {
+                throw new BizException(ErrorCode.PARAM_ERROR, "过期时间格式不正确");
+            }
         }
         shortLinkMapper.updateById(entity);
 
@@ -185,21 +189,19 @@ public class ShortLinkServiceImpl implements ShortLinkService {
     }
 
     /**
-     * 批量填充列表中每条短链的 PV/UV（从 t_access_stats 聚合查询）。
+     * 批量填充列表中每条短链的 PV/UV（一次 GROUP BY 查询）。
      */
     private void populateStats(List<ShortLinkVO> vos) {
         if (vos.isEmpty()) return;
-        // 收集所有 shortCode
         Set<String> codes = vos.stream().map(ShortLinkVO::getShortCode).collect(Collectors.toSet());
-        // 查询所有时间的累计 PV/UV（不再限定日期范围，取全量聚合）
+        List<AccessStatsDO> statsList = statsMapper.selectTotalByShortCodes(codes);
         Map<String, long[]> statsMap = new HashMap<>();
-        for (String code : codes) {
-            List<AccessStatsDO> stats = statsMapper.selectByShortCodeAndDateRange(code, "2000-01-01", "2099-12-31");
-            long totalPv = stats.stream().mapToLong(s -> s.getPv() != null ? s.getPv() : 0).sum();
-            long totalUv = stats.stream().mapToLong(s -> s.getUv() != null ? s.getUv() : 0).sum();
-            statsMap.put(code, new long[]{totalPv, totalUv});
+        for (AccessStatsDO s : statsList) {
+            statsMap.put(s.getShortCode(), new long[]{
+                    s.getPv() != null ? s.getPv() : 0,
+                    s.getUv() != null ? s.getUv() : 0
+            });
         }
-        // 填充到 VO
         for (ShortLinkVO vo : vos) {
             long[] s = statsMap.getOrDefault(vo.getShortCode(), new long[]{0, 0});
             vo.setPv(s[0]);

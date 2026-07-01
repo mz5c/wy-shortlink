@@ -72,6 +72,18 @@ const LinkListPage: React.FC = () => {
     return <Tag color="green">正常</Tag>;
   };
 
+  const fallbackCopy = (text: string) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    message.success('已复制');
+  };
+
   const columns: ColumnsType<ShortLinkVO> = [
     { title: '短码', dataIndex: 'shortCode', key: 'shortCode', width: 100 },
     { title: '短链', dataIndex: 'shortUrl', key: 'shortUrl', width: 240, ellipsis: true,
@@ -79,7 +91,14 @@ const LinkListPage: React.FC = () => {
         <Space size={4}>
           <span style={{ color: '#1677ff' }}>{url}</span>
           <Button type="text" size="small" icon={<CopyOutlined />}
-            onClick={() => { navigator.clipboard.writeText(url); message.success('已复制'); }} />
+            onClick={() => {
+              try {
+                navigator.clipboard.writeText(url).then(() => message.success('已复制'))
+                  .catch(() => fallbackCopy(url));
+              } catch {
+                fallbackCopy(url);
+              }
+            }} />
         </Space>
       ) },
     { title: '原始 URL', dataIndex: 'originalUrl', key: 'originalUrl', ellipsis: true,

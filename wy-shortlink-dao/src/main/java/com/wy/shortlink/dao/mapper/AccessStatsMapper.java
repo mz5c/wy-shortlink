@@ -14,4 +14,6 @@ public interface AccessStatsMapper extends BaseMapper<AccessStatsDO> {
             @Param("startDate") String startDate,
             @Param("endDate") String endDate
     );
+    /** 批量查询多个 shortCode 的总计 PV/UV */
+    List<AccessStatsDO> selectTotalByShortCodes(@Param("codes") java.util.Collection<String> codes);
 }

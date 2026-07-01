@@ -11,13 +11,15 @@ import com.wy.shortlink.service.StatsService;
 import com.wy.shortlink.service.dto.StatsVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,6 +31,8 @@ public class StatsServiceImpl implements StatsService {
     private final ShortLinkMapper shortLinkMapper;
     private final StringRedisTemplate redisTemplate;
 
+    private static final int SCAN_BATCH_SIZE = 100;
+
     @Override
     public StatsVO getStats(String shortCode, String startDate, String endDate) {
         ShortLinkDO link = shortLinkMapper.selectByShortCode(shortCode);
@@ -37,8 +41,8 @@ public class StatsServiceImpl implements StatsService {
         }
 
         List<AccessStatsDO> stats = statsMapper.selectByShortCodeAndDateRange(shortCode, startDate, endDate);
-        long totalPv = stats.stream().mapToLong(AccessStatsDO::getPv).sum();
-        long totalUv = stats.stream().mapToLong(AccessStatsDO::getUv).sum();
+        long totalPv = stats.stream().mapToLong(s -> s.getPv() != null ? s.getPv() : 0).sum();
+        long totalUv = stats.stream().mapToLong(s -> s.getUv() != null ? s.getUv() : 0).sum();
         List<StatsVO.DailyStat> dailyStats = stats.stream()
                 .map(s -> StatsVO.DailyStat.builder()
                         .date(s.getStatDate().toString())
@@ -58,17 +62,24 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public void syncStatsFromRedis() {
         String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
-        Set<String> pvKeys = redisTemplate.keys("sl:stats:pv:*:" + today);
-        if (pvKeys == null || pvKeys.isEmpty()) {
+        String pattern = "sl:stats:pv:*:" + today;
+
+        List<String> pvKeys = new ArrayList<>();
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).count(SCAN_BATCH_SIZE).build();
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            cursor.forEachRemaining(pvKeys::add);
+        } catch (Exception e) {
+            log.error("Failed to scan Redis keys for stats sync", e);
             return;
         }
 
+        if (pvKeys.isEmpty()) return;
+
+        int processed = 0;
         for (String pvKey : pvKeys) {
             try {
                 String[] parts = pvKey.split(":");
-                if (parts.length < 5) {
-                    continue;
-                }
+                if (parts.length < 5) continue;
                 String shortCode = parts[3];
                 String date = parts[4];
 
@@ -84,11 +95,12 @@ public class StatsServiceImpl implements StatsService {
                     stat.setPv(pv);
                     stat.setUv(uv);
                     statsMapper.upsertStats(stat);
+                    processed++;
                 }
             } catch (Exception e) {
                 log.error("Failed to sync stats for key={}", pvKey, e);
             }
         }
-        log.info("Stats sync completed, processed {} keys", pvKeys.size());
+        log.info("Stats sync completed, scanned {} keys, synced {}", pvKeys.size(), processed);
     }
 }

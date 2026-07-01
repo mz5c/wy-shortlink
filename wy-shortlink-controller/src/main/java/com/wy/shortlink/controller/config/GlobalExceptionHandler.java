@@ -5,6 +5,7 @@ import com.wy.shortlink.common.exception.BizException;
 import com.wy.shortlink.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,6 +13,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<?> handleValidation(MethodArgumentNotValidException e) {
+        String msg = e.getBindingResult().getFieldErrors().stream()
+                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b).orElse("参数校验失败");
+        log.warn("Validation failed: {}", msg);
+        return Result.fail(ErrorCode.PARAM_ERROR, msg);
+    }
+
     @ExceptionHandler(BizException.class)
     public Result<?> handleBizException(BizException e) {
         log.warn("BizException: code={}, message={}", e.getCode(), e.getMessage());

@@ -5,6 +5,7 @@ import com.wy.shortlink.common.result.Result;
 import com.wy.shortlink.service.UserService;
 import com.wy.shortlink.service.dto.CreateUserRequest;
 import com.wy.shortlink.service.dto.UserVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasRole('admin')")
-    public Result<UserVO> create(@RequestBody CreateUserRequest req) {
+    public Result<UserVO> create(@Valid @RequestBody CreateUserRequest req) {
         return Result.success(userService.createUser(req));
     }
 
