@@ -55,4 +55,4 @@ CREATE TABLE IF NOT EXISTS t_user (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 INSERT IGNORE INTO t_user (username, password, role, status) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5Eh', 'admin', 1);
+('admin', '$2a$10$anal2DVTD27kdCH1UGQtFeOBzJwpSrVIET83ss67VImqO/wzaH/GS', 'admin', 1);

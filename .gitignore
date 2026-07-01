@@ -1,0 +1,80 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Docs (generated specs/plans)
+docs/
+
+# Planning files (task management)
+task_plan.md
+findings.md
+progress.md
+
+# Superpowers (brainstorming visual companion)
+.superpowers/
+
+# Worktrees
+.worktrees/
+
+# Temporary files
+*.tmp
+*.bak
+
+RAG.md
+# Node
+node_modules/
+npm-debug.log*
