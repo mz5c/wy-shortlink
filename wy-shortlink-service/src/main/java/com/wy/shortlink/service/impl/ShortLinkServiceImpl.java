@@ -79,17 +79,14 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         }
 
         String shortCode;
-        if (StringUtils.hasText(req.getAlias())) {
+        boolean isCustomAlias = StringUtils.hasText(req.getAlias());
+        if (isCustomAlias) {
             if (!ALIAS_PATTERN.matcher(req.getAlias()).matches()) {
                 throw new BizException(ErrorCode.PARAM_ERROR, "别名须为6-20位字母数字");
             }
             shortCode = req.getAlias();
         } else {
-            Long id = redisTemplate.opsForValue().increment(Constants.REDIS_ID_KEY);
-            if (id == null) {
-                throw new BizException(ErrorCode.SYSTEM_ERROR, "ID 生成服务不可用");
-            }
-            shortCode = Base62Utils.encode(id);
+            shortCode = Base62Utils.generateRandomCode(Base62Utils.DEFAULT_CODE_LENGTH);
         }
 
         ShortLinkDO entity = new ShortLinkDO();
@@ -97,21 +94,22 @@ public class ShortLinkServiceImpl implements ShortLinkService {
         entity.setOriginalUrl(url);
         entity.setExpireTime(expireTime);
 
-        int retries = 3;
-        while (retries > 0) {
+        int retries = 10;
+        while (true) {
             try {
                 shortLinkMapper.insert(entity);
                 break;
             } catch (DuplicateKeyException e) {
                 retries--;
                 if (retries == 0) {
+                    throw new BizException(ErrorCode.SYSTEM_ERROR, "短码生成冲突，请重试");
+                }
+                // 自定义别名冲突直接报错，随机码冲突则重新生成
+                if (isCustomAlias) {
                     throw new BizException(ErrorCode.ALIAS_OCCUPIED, "别名已被占用，请换一个");
                 }
-                if (!StringUtils.hasText(req.getAlias())) {
-                    Long newId = redisTemplate.opsForValue().increment(Constants.REDIS_ID_KEY);
-                    shortCode = Base62Utils.encode(newId);
-                    entity.setShortCode(shortCode);
-                }
+                shortCode = Base62Utils.generateRandomCode(Base62Utils.DEFAULT_CODE_LENGTH);
+                entity.setShortCode(shortCode);
             }
         }
 

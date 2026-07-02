@@ -3,6 +3,7 @@ package com.wy.shortlink.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wy.shortlink.common.enums.ErrorCode;
 import com.wy.shortlink.common.exception.BizException;
+import com.wy.shortlink.common.util.Base62Utils;
 import com.wy.shortlink.dao.entity.ShortLinkDO;
 import com.wy.shortlink.dao.mapper.AccessStatsMapper;
 import com.wy.shortlink.dao.mapper.ShortLinkMapper;
@@ -18,6 +19,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.LocalDateTime;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -46,8 +48,7 @@ class ShortLinkServiceImplTest {
     @Test
     void createLink_withValidUrl_shouldReturnShortLinkVO() {
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
-        when(valueOps.increment(anyString())).thenReturn(1L);
-        // 模拟 insert 时设置 createTime
+        // 随机生成短码后仍会写缓存
         when(shortLinkMapper.insert(any(ShortLinkDO.class))).thenAnswer(invocation -> {
             ShortLinkDO entity = invocation.getArgument(0);
             entity.setCreateTime(LocalDateTime.now());
@@ -60,8 +61,12 @@ class ShortLinkServiceImplTest {
         ShortLinkVO vo = service.createLink(req);
 
         assertNotNull(vo);
-        assertEquals("1", vo.getShortCode());
-        assertEquals(DOMAIN + "/s/1", vo.getShortUrl());
+        assertNotNull(vo.getShortCode());
+        assertEquals(Base62Utils.DEFAULT_CODE_LENGTH, vo.getShortCode().length(),
+                "随机短码应为6位");
+        assertTrue(Pattern.matches("^[0-9a-zA-Z]+$", vo.getShortCode()),
+                "短码应仅包含 Base62 字符");
+        assertEquals(DOMAIN + "/s/" + vo.getShortCode(), vo.getShortUrl());
         assertNotNull(vo.getCreateTime());
         verify(shortLinkMapper).insert(any(ShortLinkDO.class));
     }

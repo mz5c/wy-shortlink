@@ -9,8 +9,26 @@ public final class Base62Utils {
     private static final String CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int BASE = CHARS.length();
 
+    /** 短码默认长度 */
+    public static final int DEFAULT_CODE_LENGTH = 6;
+
     private Base62Utils() {
         throw new UnsupportedOperationException("Utility class");
+    }
+
+    /**
+     * 随机生成固定长度的 Base62 短码字符串。
+     *
+     * @param length 短码长度
+     * @return 随机短码
+     */
+    public static String generateRandomCode(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(BASE);
+            sb.append(CHARS.charAt(idx));
+        }
+        return sb.toString();
     }
 
     /**
