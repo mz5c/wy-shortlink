@@ -21,13 +21,6 @@ mybatis-plus:
 
 shortlink:
   domain: http://localhost:8080
-  max-url-length: 2048
-  alias-min-length: 6
-  alias-max-length: 20
-  alias-pattern: "^[a-zA-Z0-9]{6,20}$"
-  max-expire-years: 5
-  cache-ttl-hours: 24
-  stats-sync-minutes: 5
 
 jwt:
   secret: changeme-in-production-use-env-var-min-256-bits

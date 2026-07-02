@@ -5,8 +5,6 @@ public final class Constants {
 
     /** Redis key: 短链映射 */
     public static final String REDIS_LINK_KEY = "sl:link:%s";
-    /** Redis key: ID 发号器 */
-    public static final String REDIS_ID_KEY = "shortlink:id";
     /** Redis key: 实时 PV */
     public static final String REDIS_STATS_PV = "sl:stats:pv:%s:%s";
     /** Redis key: 实时 UV (HyperLogLog) */
