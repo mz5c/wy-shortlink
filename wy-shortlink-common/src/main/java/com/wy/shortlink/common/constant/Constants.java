@@ -7,8 +7,10 @@ public final class Constants {
     public static final String REDIS_LINK_KEY = "sl:link:%s";
     /** Redis key: 实时 PV */
     public static final String REDIS_STATS_PV = "sl:stats:pv:%s:%s";
-    /** Redis key: 实时 UV (HyperLogLog) */
+    /** Redis key: 实时 UV (HyperLogLog, 按天) */
     public static final String REDIS_STATS_UV = "sl:stats:uv:%s:%s";
+    /** Redis key: 累计 UV (HyperLogLog, 全量去重) */
+    public static final String REDIS_STATS_UV_TOTAL = "sl:stats:uv:total:%s";
     /** Redis key: access token 黑名单 */
     public static final String REDIS_BLACKLIST_ACCESS = "auth:blacklist:access:%s";
     /** Redis key: refresh token 黑名单 */

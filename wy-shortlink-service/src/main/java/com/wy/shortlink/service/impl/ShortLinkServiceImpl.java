@@ -187,23 +187,21 @@ public class ShortLinkServiceImpl implements ShortLinkService {
     }
 
     /**
-     * 批量填充列表中每条短链的 PV/UV（一次 GROUP BY 查询）。
+     * 批量填充列表中每条短链的 PV/UV（一次 GROUP BY 查询 PV，Redis HLL 查 UV）。
      */
     private void populateStats(List<ShortLinkVO> vos) {
         if (vos.isEmpty()) return;
         Set<String> codes = vos.stream().map(ShortLinkVO::getShortCode).collect(Collectors.toSet());
         List<AccessStatsDO> statsList = statsMapper.selectTotalByShortCodes(codes);
-        Map<String, long[]> statsMap = new HashMap<>();
+        Map<String, Long> pvMap = new HashMap<>();
         for (AccessStatsDO s : statsList) {
-            statsMap.put(s.getShortCode(), new long[]{
-                    s.getPv() != null ? s.getPv() : 0,
-                    s.getUv() != null ? s.getUv() : 0
-            });
+            pvMap.put(s.getShortCode(), s.getPv() != null ? s.getPv() : 0);
         }
         for (ShortLinkVO vo : vos) {
-            long[] s = statsMap.getOrDefault(vo.getShortCode(), new long[]{0, 0});
-            vo.setPv(s[0]);
-            vo.setUv(s[1]);
+            vo.setPv(pvMap.getOrDefault(vo.getShortCode(), 0L));
+            String uvKey = String.format(Constants.REDIS_STATS_UV_TOTAL, vo.getShortCode());
+            Long uv = redisTemplate.opsForHyperLogLog().size(uvKey);
+            vo.setUv(uv != null ? uv : 0);
         }
     }
 

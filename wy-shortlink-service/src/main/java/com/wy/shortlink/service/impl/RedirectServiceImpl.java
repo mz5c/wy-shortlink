@@ -48,10 +48,12 @@ public class RedirectServiceImpl implements RedirectService {
             String today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
             String pvKey = String.format(Constants.REDIS_STATS_PV, shortCode, today);
             String uvKey = String.format(Constants.REDIS_STATS_UV, shortCode, today);
+            String uvTotalKey = String.format(Constants.REDIS_STATS_UV_TOTAL, shortCode);
             redisTemplate.opsForValue().increment(pvKey);
             redisTemplate.expire(pvKey, 7, TimeUnit.DAYS);
             redisTemplate.opsForHyperLogLog().add(uvKey, ip != null ? ip : "unknown");
             redisTemplate.expire(uvKey, 7, TimeUnit.DAYS);
+            redisTemplate.opsForHyperLogLog().add(uvTotalKey, ip != null ? ip : "unknown");
 
             tableManager.ensureTableExists();
             AccessLogDO log = new AccessLogDO();

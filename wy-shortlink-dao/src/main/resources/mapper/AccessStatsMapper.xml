@@ -16,7 +16,7 @@
     </select>
 
     <select id="selectTotalByShortCodes" resultType="com.wy.shortlink.dao.entity.AccessStatsDO">
-        SELECT short_code AS shortCode, SUM(pv) AS pv, SUM(uv) AS uv
+        SELECT short_code AS shortCode, SUM(pv) AS pv
         FROM t_access_stats
         WHERE short_code IN
         <foreach collection="codes" item="code" open="(" separator="," close=")">

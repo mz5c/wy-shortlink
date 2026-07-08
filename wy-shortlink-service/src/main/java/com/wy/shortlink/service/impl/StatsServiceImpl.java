@@ -42,7 +42,9 @@ public class StatsServiceImpl implements StatsService {
 
         List<AccessStatsDO> stats = statsMapper.selectByShortCodeAndDateRange(shortCode, startDate, endDate);
         long totalPv = stats.stream().mapToLong(s -> s.getPv() != null ? s.getPv() : 0).sum();
-        long totalUv = stats.stream().mapToLong(s -> s.getUv() != null ? s.getUv() : 0).sum();
+        String uvTotalKey = String.format(Constants.REDIS_STATS_UV_TOTAL, shortCode);
+        Long totalUv = redisTemplate.opsForHyperLogLog().size(uvTotalKey);
+        if (totalUv == null) totalUv = 0L;
         List<StatsVO.DailyStat> dailyStats = stats.stream()
                 .map(s -> StatsVO.DailyStat.builder()
                         .date(s.getStatDate().toString())
